@@ -1,0 +1,110 @@
+-- Delta Executor Compatible Script (Persists on Death)
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- إزالة أي واجهة قديمة لتجنب التكرار
+if PlayerGui:FindFirstChild("BringGuiWithAvatar") then
+	PlayerGui.BringGuiWithAvatar:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BringGuiWithAvatar"
+ScreenGui.ResetOnSpawn = false -- هذا السطر يمنع اختفاء الواجهة عند الموت
+ScreenGui.Parent = PlayerGui
+
+-- حجم القائمة المصغر
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 220, 0, 155)
+MainFrame.Position = UDim2.new(0.5, -110, 0.4, -77)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- صورة اللاعب المخفية في البداية وتظهر عند إدخال الاسم
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Size = UDim2.new(0, 40, 0, 40)
+AvatarImage.Position = UDim2.new(0.5, -20, 0, 8)
+AvatarImage.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+AvatarImage.Image = "rbxassetid://0"
+AvatarImage.Visible = false 
+AvatarImage.Parent = MainFrame
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(1, 0)
+AvatarCorner.Parent = AvatarImage
+
+-- حقل إدخال الاسم
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(0, 184, 0, 34)
+TextBox.Position = UDim2.new(0.5, -92, 0, 56)
+TextBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.PlaceholderText = "اكتب الاسم..."
+TextBox.Text = ""
+TextBox.TextSize = 13
+TextBox.Font = Enum.Font.SourceSansBold
+TextBox.Parent = MainFrame
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 6)
+BoxCorner.Parent = TextBox
+
+-- زر السحب
+local BringButton = Instance.new("TextButton")
+BringButton.Size = UDim2.new(0, 184, 0, 36)
+BringButton.Position = UDim2.new(0.5, -92, 0, 103)
+BringButton.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+BringButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+BringButton.Text = "Bring"
+BringButton.TextSize = 15
+BringButton.Font = Enum.Font.SourceSansBold
+BringButton.Parent = MainFrame
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 6)
+BtnCorner.Parent = BringButton
+
+local targetPlayer = nil
+
+local function findPlayer(nameInput)
+	if nameInput == "" then return nil end
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			if string.sub(string.lower(player.Name), 1, #nameInput) == string.lower(nameInput) or 
+			   string.sub(string.lower(player.DisplayName), 1, #nameInput) == string.lower(nameInput) then
+				return player
+			end
+		end
+	end
+	return nil
+end
+
+TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+	targetPlayer = findPlayer(TextBox.Text)
+	if targetPlayer and TextBox.Text ~= "" then
+		pcall(function()
+			local content = Players:GetUserThumbnailAsync(targetPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+			AvatarImage.Image = content
+			AvatarImage.Visible = true
+		end)
+	else
+		AvatarImage.Image = "rbxassetid://0"
+		AvatarImage.Visible = false
+	end
+end)
+
+-- تنفيذ السحب بضغطة زر واحدة
+BringButton.MouseButton1Click:Connect(function()
+	if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			targetPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+		end
+	end
+end)
